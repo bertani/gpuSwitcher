@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+set -e
+
+cfgFile='/etc/X11/xorg.conf'
+acpi_call='/home/sylar/tools/acpi_call.ko'
+
+GPU0="intel GMA"
+GPU1="nvidia ION"
+
+GPU0_drv="intel"
+GPU1_drv="nvidia"
+
+COMMAND="$1"
+shift
+
+case $COMMAND in
+start)
+    insmod $acpi_call
+    ;;
+stop)
+    if grep -qs $GPU0_drv $cfgFile;
+    then
+        echo \\OSGS 0x01 > /proc/acpi/call
+        update-alternatives --set gl_conf /usr/lib/mesa/ld.so.conf
+        ldconfig
+    else
+        echo \\OSGS 0x02 > /proc/acpi/call
+        update-alternatives --set gl_conf /usr/lib/nvidia-current/ld.so.conf
+        ldconfig
+    fi
+    ;;
+esac

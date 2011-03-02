@@ -1,0 +1,49 @@
+#!/bin/sh
+# author: Thomas Bertani
+# version: 0.1
+# license: GNU gpl v3 or later
+
+title='GPU switcher'
+
+cfgFile='/etc/X11/xorg.conf'
+
+GPU0="intel GMA"
+GPU1="nvidia ION"
+
+GPU0_drv="intel"
+GPU1_drv="nvidia"
+
+
+if grep -qs $GPU0_drv $cfgFile;
+then
+    current=$GPU0
+    current_drv=$GPU0_drv
+    other=$GPU1
+    other_drv=$GPU1_drv
+else
+    current=$GPU1
+    current_drv=$GPU1_drv
+    other=$GPU0
+    other_drv=$GPU0_drv
+fi
+
+zenity --question --title="$title" --text="You are currently using the $current GPU. What do you want to do?" --ok-label="Switch to $other" --cancel-label="Keep using $current"
+
+if [ $? = 1 ];
+then
+    exit 0 #nothing to do
+fi
+
+#Switching from $current to $other
+sed "s/$current_drv/$other_drv/" $cfgFile > /tmp/xorg_tmp
+gksudo cp /tmp/xorg_tmp $cfgFile
+if [ $? != 0 ];
+then
+    zenity --error --title="$title" --text="An error occurred while editing the file '$cfgFile'" #Something went wrong..
+    exit 1
+fi
+gksudo chmod 644 $cfgFile
+
+
+gksudo reboot
+exit 0
